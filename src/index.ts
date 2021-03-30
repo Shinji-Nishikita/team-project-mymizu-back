@@ -5,22 +5,45 @@ import { Monster } from "./entity/Monster";
 import * as express from "express";
 import * as cors from "cors";
 import axios from "axios";
+import { connect } from "net";
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-
 createConnection()
-.then(async (connection) => {
+  .then(async (connection) => {
     axios.defaults.headers.common["Authorization"] = process.env.API_KEY;
     const userRepo = connection.getRepository(User);
     // const monsterRepo = connection.getRepository(Monster);
 
     app.post("/login", async (req, res) => {
-      //we fetch the user data from the mymizu api
-      //if no username is in our database we create one
-      //we return the userinfo
+      let apiFetch;
+      try {
+          apiFetch = await axios.get(
+              "https://my-mizu-dev2-gen8n.ondigitalocean.app/dev-api/users/byUsername?username=" +
+                req.body.username
+            );
+      } catch (err){
+        return res.send({msg:"that user doesn't exist on the mymizu api"})
+      }
+      const dbQuery = await userRepo.findOne({
+        username: apiFetch.data.username,
+      });
+      console.log("query, ", dbQuery);
+      if (dbQuery === undefined) {
+        const user = new User();
+        const monster = new Monster();
+        monster.currentHP = 25;
+        monster.maxHP = 25;
+        monster.startDate = new Date();
+        user.username = req.body.username;
+        user.level = 1;
+        user.attackPower = 25;
+        user.monster = monster;
+        connection.manager.save(user);
+        res.send({ msg: "new user created on our database" });
+      } else res.send({ msg: "user exists on our database" });
     });
 
     app.get("/user/:username", async (req, res) => {
@@ -28,20 +51,19 @@ createConnection()
         "https://my-mizu-dev2-gen8n.ondigitalocean.app/dev-api/users/byUsername?username=" +
           req.params.username
       );
-      console.log('api fetch data ', apiFetch.data)
+      //   console.log('api fetch data ', apiFetch.data)
       const user = await userRepo.findOne(
         { username: req.params.username },
         { relations: ["monster"] }
       );
-      console.log('database data ', user)
+      //   console.log('database data ', user)
       let apiUserPlus = Object.assign({}, user);
-      apiUserPlus = Object.assign(apiUserPlus, apiFetch.data)
-      console.log('merged object', apiUserPlus)
+      apiUserPlus = Object.assign(apiUserPlus, apiFetch.data);
+      //   console.log('merged object', apiUserPlus)
       res.send(apiUserPlus);
     });
 
     // api/user/:username/newMonster
-
 
     // console.log("Inserting a new user into the database...");
     // const user = new User();
