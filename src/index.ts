@@ -15,7 +15,6 @@ createConnection()
   .then(async (connection) => {
     axios.defaults.headers.common["Authorization"] = process.env.API_KEY;
     const userRepo = connection.getRepository(User);
-    // const monsterRepo = connection.getRepository(Monster);
 
     app.post("/login", async (req, res) => {
       let apiFetch;
@@ -39,7 +38,7 @@ createConnection()
         monster.startDate = new Date();
         user.username = req.body.username;
         user.level = 1;
-        user.attackPower = 25;
+        user.attackPower = 5;
         user.monster = monster;
         connection.manager.save(user);
         res.send({ msg: "new user created on our database" });
@@ -51,41 +50,33 @@ createConnection()
         "https://my-mizu-dev2-gen8n.ondigitalocean.app/dev-api/users/byUsername?username=" +
           req.params.username
       );
-      //   console.log('api fetch data ', apiFetch.data)
       const user = await userRepo.findOne(
         { username: req.params.username },
         { relations: ["monster"] }
       );
-      //   console.log('database data ', user)
       let apiUserPlus = Object.assign({}, user);
       apiUserPlus = Object.assign(apiUserPlus, apiFetch.data);
-      //   console.log('merged object', apiUserPlus)
       res.send(apiUserPlus);
     });
 
-    // api/user/:username/newMonster
-
-    // console.log("Inserting a new user into the database...");
-    // const user = new User();
-    // const monster = new Monster();
-    // user.username = "Bryson";
-    // user.level = 1;
-    // user.attackPower = 25;
-    // monster.currentHP = 25;
-    // monster.maxHP = 25;
-    // monster.startDate = new Date();
-    // user.monster = monster;
-
-    // await connection.manager.save(user);
-    // console.log("Saved a new user with id: " + user.id);
-
-    // console.log("Loading users from the database...");
-    // const users = await connection.manager.find(User, {
-    //   relations: ["monster"],
-    // });
-    // console.log("Loaded users: ", users);
-
-    // console.log("Here you can setup and run express/koa/any other framework.");
+    app.patch('/user/:username/attack', async (req,res)=>{
+        const user = await userRepo.findOne({username: req.params.username}, {relations: ["monster"]});
+        let monster = user.monster;
+        const oldMonsterMaxHP = monster.maxHP;
+        monster.currentHP -= user.attackPower * req.body.size;
+        await connection.manager.save(user);
+        if (monster.currentHP <= 0){
+            user.level += 1;
+            user.attackPower *= user.level;
+            monster.maxHP = user.level * 25 + oldMonsterMaxHP;
+            monster.currentHP = monster.maxHP;
+            monster.startDate = new Date();
+            await connection.manager.save(user);
+            return res.send({msg:"monster is defeated"});
+        }
+        res.send({msg:'monsters HP decreased by' + user.attackPower * req.body.size});
+    })
+    
   })
   .catch((error) => console.log(error));
 
