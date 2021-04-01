@@ -14,6 +14,7 @@ app.use(cors());
 createConnection()
   .then(async (connection) => {
     axios.defaults.headers.common["Authorization"] = process.env.API_KEY;
+    
     const userRepo = connection.getRepository(User);
 
     app.post("/login", async (req, res) => {
@@ -40,6 +41,7 @@ createConnection()
         user.attackPower = 5;
         user.monster = monster;
         connection.manager.save(user);
+        console.log(user);
         res.send({ msg: "new user created on our database" });
       } else res.send({ msg: "user exists on our database" });
     });
@@ -49,7 +51,7 @@ createConnection()
         "https://my-mizu-dev2-gen8n.ondigitalocean.app/dev-api/users/byUsername?username=" +
           req.params.username
       );
-      console.log(apiFetch.data);
+      // console.log(apiFetch.data);
       const user = await userRepo.findOne(
         { username: req.params.username },
         { relations: ["monster"] }
@@ -64,10 +66,12 @@ createConnection()
         let monster = user.monster;
         const oldMonsterMaxHP = monster.maxHP;
         monster.currentHP -= user.attackPower * req.body.size;
+        console.log('monster ', monster);
+        console.log('user ', user)
         await connection.manager.save(user);
         if (monster.currentHP <= 0){
             user.level += 1;
-            user.attackPower *= user.level;
+            user.attackPower = user.level * 5;
             monster.maxHP = user.level * 25 + oldMonsterMaxHP;
             monster.currentHP = monster.maxHP;
             monster.startDate = new Date();
