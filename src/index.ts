@@ -29,7 +29,6 @@ createConnection()
       const dbQuery = await userRepo.findOne({
         username: apiFetch.data.username,
       });
-      console.log("query, ", dbQuery);
       if (dbQuery === undefined) {
         const user = new User();
         const monster = new Monster();
@@ -50,6 +49,7 @@ createConnection()
         "https://my-mizu-dev2-gen8n.ondigitalocean.app/dev-api/users/byUsername?username=" +
           req.params.username
       );
+      console.log(apiFetch.data);
       const user = await userRepo.findOne(
         { username: req.params.username },
         { relations: ["monster"] }
@@ -72,9 +72,9 @@ createConnection()
             monster.currentHP = monster.maxHP;
             monster.startDate = new Date();
             await connection.manager.save(user);
-            return res.send({msg:"monster is defeated"});
+            return res.send({msg:"monster is defeated", monsterHP: monster.currentHP});
         }
-        res.send({msg:'monsters HP decreased by' + user.attackPower * req.body.size});
+        res.send({msg:'monsters HP decreased by ' + user.attackPower * req.body.size, monsterHP: monster.currentHP});
     })
     
   })
