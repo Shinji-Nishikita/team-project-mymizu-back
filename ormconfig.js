@@ -1,3 +1,4 @@
+const parse = require('pg-connection-string');
 
 let config = {
    "type": 'postgres',
@@ -27,7 +28,7 @@ let config = {
 // const productionConn = null
 if (process.env.DATABASE_URL){
    config = {}
-   config.url = process.env.DATABASE_URL;
+   config.url = parse(process.env.DATABASE_URL);
    config.ssl = {rejectUnauthorized:false};
 }
 
