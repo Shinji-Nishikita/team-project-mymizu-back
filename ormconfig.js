@@ -1,4 +1,4 @@
-module.exports = {
+export const config = {
    "type": process.env.DB_TYPE,
    "host": process.env.DB_HOST,
    "port": process.env.DB_PORT,
@@ -22,3 +22,5 @@ module.exports = {
       "subscribersDir": "src/subscriber"
    }
 }
+
+module.exports = config;
