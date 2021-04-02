@@ -28,6 +28,7 @@ let config = {
 // const productionConn = null
 if (process.env.DATABASE_URL){
    config = {}
+   config.type='postgres';
    config.url = parse(process.env.DATABASE_URL);
    config.ssl = {rejectUnauthorized:false};
 }
