@@ -1,8 +1,8 @@
-import {ConnectionOptions} from 'typeorm'
-export const config: ConnectionOptions = {
+
+let config = {
    "type": 'postgres',
    "host": process.env.DB_HOST,
-   "port": Number(process.env.DB_PORT),
+   "port": process.env.DB_PORT,
    "username": process.env.DB_USERNAME,
    "password": process.env.DB_PASSWORD,
    "database": process.env.DB_DATABASE,
@@ -22,6 +22,13 @@ export const config: ConnectionOptions = {
       "migrationsDir": "src/migration",
       "subscribersDir": "src/subscriber"
    }
+}
+
+// const productionConn = null
+if (process.env.DATABASE_URL){
+   config = {}
+   config.url = process.env.DATABASE_URL;
+   config.ssl = {rejectUnauthorized:false};
 }
 
 module.exports = config;
